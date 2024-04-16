@@ -55,11 +55,13 @@ Når denne er definert, kan vi eksempelvis endre \verb|OUT|-registret ved å kal
 
  Dere vil også se at medlemsvariabelen \verb|RESERVED0| i \verb|GPIO0| er en array av type \verb|volatile| \verb|uint32_t| med 321 elementer. Dette er fordi databladet forteller oss at \verb|OUT|-registeret i modulen \verb|GPIO0| har et offsett på 
  \verb|0x504| ($\text{504}_{\text{16}}$) fra modulens baseadresse. $\text{504}_{\text{16}}$ er det samme som $\text{1284}_{\text{10}}$. Altså er det 1284 byte mellom baseadressen og \verb|OUT|-registeret. Siden vi bruker en ordstørrelse (word) på 32 bit, deler vi dette tallet på fire (32 bit er 4 byte). Altså, 1284/4 = 321. I hexadesimal, tilsvarer dette \verb|0x141|.
+
  
  \begin{itemize}
      \item Dersom man nå følger samme resonnement, hva skal \verb|__RESERVED1_SIZE__| være? Finn ut dette, og endre \verb|main.c| tilsvarende.
  \end{itemize}
 
+Deretter må dere fylle inn resten av \verb|button_init()|. Se på side 136 databladet for å se hva denne konfigurasjonen gjør, og om det stemmer med hvordan knappene er koblet til portene til Target MCU.
 
 Når dere har gjort det, kan dere fylle ut de manglende bitene i \verb|main()|, som består av å legge inn logikk slik at LED-matrisen lyser når vi trykker på knapp \verb|BUTTON 1|, og skrur seg av når vi trykker på knapp \verb|BUTTON 2|. Dersom dere nå kaller \verb|make| og \verb|make flash| i terminalen, vil dere kunne se at LED-matrisen lyse av og på, avhengig av hvilken knapp som blir trykket, om alt har blitt gjort riktig.
 
@@ -73,6 +75,7 @@ and \textbf{E}vents). Sistnevnte brukes for å lage et hendelsesbasert system, o
     tro dere mener base 10.
     \item Når dere skal finne \verb|__RESERVED1_SIZE__|, så husk at \verb|DETECTMODE| starter på \verb|0x524|, som betyr at den byten slutter på \verb|0x527|. Altså starter ikke \verb|RESERVED1| på \verb|0x524|, men på \verb|0x528|.
     \item \verb|BTN| brukes veldig ofte som en forkortelse for \textit{button}.
+    \item Er knappene aktivt lav eller høy? Hvorfor trenger vi en pull-up på knappene?
     \item Sjekk ut appendiks \ref{app:bit} for hvordan man kan manipulere bits.
     \item Sjekk ut appendiks \ref{app:datablad} for hvordan man bruker databladet til å typecaste.
 
@@ -148,8 +151,15 @@ Målet med denne funksjonen er å initialisere de nødvendige \verb|GPIO|-pinnen
 \begin{itemize}
     \item Første steg er derfor å inkludere \verb|gpio.h| (allerede implementert for dere) i \verb|uart.c|
     \item Andre steg er å konfiguere pinnene som input eller output i \verb|GPIO|-modulen.
-    \item Når pinnene er ferdig konfigurert i \verb|GPIO|-modulene, må de brukes av \verb|UART|-modulen. Dette gjøres med \verb|PSELTXD|- og \verb|PSELRXD|-registrene.
+    \item Når pinnene er ferdig konfigurert i \verb|GPIO|-modulene, må de brukes av \verb|UART|-modulen. Dette gjøres med \verb|PSELTXD|- og \verb|PSELRXD|-registrene. I \verb|UART|-modulen konfigureres TX og RX fra perspektivet til \verb|UART|-modulen {\it inni} mikrokontrolleren. Dette er fordi \verb|UART|-modulen og \verb|GPIO|-modulen er separate enheter. Derfor blir \verb|UART|-modulen sin RX-port GPIO sin TX-port, og motsatt. 
 \end{itemize}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[scale=0.20]{figures/UART_PINS.png}
+    \caption{Visualisering kobling mellom UART-modul og GPIO-modul}
+    \label{fig:uart_and_gpio}
+\end{figure}
 
 
 
@@ -175,6 +185,9 @@ Denne funksjonen skal ta i mot en enkel bokstav, for å sende den over til datam
 
 Sjekk ut figur 163 (\textit{UART Transmission} i side 536) i databladet til nRF52-serien for å finne ut hva dere skal gjøre. Husk å vente til sendingen er ferdig, før dere skrur av sendefunksjonaliteten.
 
+\begin{itemize}
+    \item I tillegg må dere sette \verb|EVENTS_TXRDY| lik \verb|0|. Dette er for å {\it cleare} interruptet som genereres når dere er ferdige å sende.
+\end{itemize}
 
 \cprotect\subsubsection{\lstinline{char uart_read()}}
 
@@ -187,13 +200,13 @@ Husk at dere må ta hensyn til rekkefølge for å kunne garantere at \verb|UART|
     \item I tillegg er det viktig å sørge for å kun lese \verb|RXD| en gang. Altså: dere skal ikke skru av mottakerregisteret når dere har lest meldingen.
 \end{itemize}
 \subsection{Sendefunksjon}
-Programmer deretter micro:bit-en til å sende \verb|A| om knappen \verb|BUTTON 1| trykkes, og \verb|B| om \verb|BUTTON 2| trykkes i \verb|main.c|.
+Programmer deretter utviklingskitet til å sende \verb|A| om knappen \verb|BUTTON 1| trykkes, og \verb|B| om \verb|BUTTON 2| trykkes i \verb|main.c|.
 
 For å motta meldingene på datamaskinen, bruker vi på Sanntidslabben programmet \verb|picocom|. Kall dette fra et terminalvindu:
 
 \verb|picocom -b 9600 /dev/ttyACM0|
 
-for å fortelle \verb|picocom| at det skal høre etter enheten \verb|/dev/ttyACM0|, med en baudrate på 9600 bit per sekund.
+for å fortelle \verb|picocom| at det skal høre etter enheten \verb|/dev/ttyACM0|, med en baudrate på 9600 bit per sekund. Det kan også hende at datamaskinen velger en annen port, f.eks. \verb|/dev/ttyACM1| eller \verb|/dev/ttyACM2|. 
 
 For å avslutte \verb|picocom| er det \verb|Ctrl+A| etterfulgt av \verb|Ctrl+X|.
 
@@ -221,16 +234,16 @@ void uart_send_str(char ** str){
 \end{lstlisting}
 
 
-Dette er egentlig en dårlig implementasjon, ettersom den gjør nesten det samme som \verb|printf|, uten noen av formateringsalternativene som gjør \verb|printf| ettertraktet. Det er derfor litt lurere å inkludere \verb|<stdio.h>| og bruke en heltallsvariant av \verb|printf|, kalt \verb|iprintf|. Det er derimot litt problematisk å bruke \verb|iprintf| direkte, ettersom den i utgangspunktet snakker med \verb|stdout|, som tradisjonelt sett peker til en terminal. Derfor bruker vi heller et bibliotek kalt \verb|newlib| som er en variant av \verb|<stdio.h>| for tilpassede datamaskiner.
+Dette er egentlig en dårlig implementasjon, ettersom den gjør nesten det samme som \verb|printf|, uten noen av formateringsalternativene som gjør \verb|printf| ettertraktet. Det er derfor litt lurere å inkludere \verb|<stdio.h>| og bruke en heltallsvariant av \verb|printf|, kalt \verb|iprintf|.
 
-Når \verb|printf(...)| kalles, vil et annet funksjonskall til \verb|_write_r(...)| utføres i bakgrunnen. Denne funksjonen vil deretter kalle \lstinline{ssize\_t \_write(int fd, const void * buf, size\_t count)}, som foreløpig ikke gjør noe. Grunnen til at denne finnes, er at den trengs for at programmet skal kompilere, men den er i utgangspunktet tom, fordi vi gir lenkeren flagget \verb|--specs=nosys.specs| (sjekk \verb|Makefilen|).
+Når \verb|iprintf(...)| kalles, vil et annet funksjonskall til \verb|_write_r(...)| utføres i bakgrunnen. Denne funksjonen vil deretter kalle \lstinline{ssize\_t \_write(int fd, const void * buf, size\_t count)}, som foreløpig ikke gjør noe. Grunnen til at denne finnes, er at den trengs for at programmet skal kompilere, men den er i utgangspunktet tom, fordi vi gir lenkeren flagget \verb|--specs=nosys.specs| (sjekk \verb|Makefilen|).
 
-Med \verb|newlib| kan vi lage mange varianter av slike skrivefunksjoner om vi har et komplekst system med mange skriveenheter eller om vi har flere tråder. Denne arkitekturen har bare en kjerne og vi vil bare bruke \verb|UART|, så vi kan fint implementere en global variant av denne skrive funksjonen. For å gjøre det, legger vi til følgene i \verb|main.c|:
+Vi lage mange varianter av slike skrivefunksjoner om vi har et komplekst system med mange skriveenheter eller om vi har flere tråder. Denne arkitekturen har bare en kjerne og vi vil bare bruke \verb|UART|, så vi kan fint implementere en global variant av denne skrive funksjonen. For å gjøre det, legger vi til følgene i \verb|main.c|:
 
 
 \begin{lstlisting}
 #include <stdio.h>
-
+#include <sys/types.h> // For ssize_t
 [...]
 
 ssize_t _write(int fd, const void *buf, size_t count){
@@ -278,7 +291,7 @@ ssize_t _read(int fd, void *buf, size_t count){
 \end{lstlisting}
 
 Skriv deretter et kort program som spør datamaskinen etter 2 heltall. Disse
-skal leses inn til micro:bit-en, som vil gange dem sammen, og sende resultatet
+skal leses inn til utviklingskitet, som vil gange dem sammen, og sende resultatet
 tilbake til datamaskinen.
 
 \subsection{Hint}\label{subsec:UART-hint}
@@ -434,6 +447,6 @@ Stort sett er det tre grunner til at dette ikke er et problem:
 
 
 \begin{itemize}
-    \item Husk å aktivere hver \verb|PPI|-kanal. Når de er konfigurert riktig, aktiveres de ved å skrive til \verb|CHENSET| i \verb|PPI|-instansen (husk at vi bare bruker seks \verb|PPI|-kanaler totalt).
+    \item Husk å aktivere hver \verb|PPI|-kanal. Når de er konfigurert riktig, aktiveres de ved å skrive til \verb|CHENSET| i \verb|PPI|-instansen (husk at vi bare bruker fire \verb|PPI|-kanaler totalt).
     \item \verb|GPIOTE|-kanalene trenger ingen eksplisitt aktivering fordi \verb|MODE|-feltet i \verb|CONFIG|-registeret automatisk tar hånd om pinnen for dere.
 \end{itemize}
