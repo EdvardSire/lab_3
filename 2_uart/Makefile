@@ -1,11 +1,11 @@
 FAMILY := nrf52
-SOURCES := main.c # Fill inn missing sources
+SOURCES := main.c uart.c # Fill inn missing sources
 
 BUILD_DIR := build
 BUILD_SYS := .build_system
 LINKER_SCRIPT := $(BUILD_SYS)/linker_script_nrf52.ld
 
-GNU_PREFIX	:= arm-none-eabi
+GNU_PREFIX	:= /home/ubuntu/tooling/arm-gnu-toolchain-13.2.Rel1-aarch64-arm-none-eabi/bin/arm-none-eabi
 CC			:= $(GNU_PREFIX)-gcc
 OBJCOPY		:= $(GNU_PREFIX)-objcopy
 OBJDUMP		:= $(GNU_PREFIX)-objdump
@@ -52,8 +52,7 @@ erase: $(BUILD_DIR)
 	nrfjprog -f $(FAMILY) --eraseall
 
 clean: $(BUILD_DIR)
-	$(QUIET) rm $(BUILD_DIR)/main.elf
-	$(QUIET) rm $(BUILD_DIR)/main.hex
+	$(QUIET) rm $(BUILD_DIR)/main.{elf,hex}
 
 recover: $(BUILD_DIR)
 	nrfjprog --recover
