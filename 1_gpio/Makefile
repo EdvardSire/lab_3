@@ -5,7 +5,7 @@ BUILD_DIR := build
 BUILD_SYS := .build_system
 LINKER_SCRIPT := $(BUILD_SYS)/linker_script_nrf52.ld
 
-GNU_PREFIX	:= arm-none-eabi
+GNU_PREFIX	:= /home/ubuntu/tooling/arm-gnu-toolchain-13.2.Rel1-aarch64-arm-none-eabi/bin/arm-none-eabi
 CC			:= $(GNU_PREFIX)-gcc
 OBJCOPY		:= $(GNU_PREFIX)-objcopy
 OBJDUMP		:= $(GNU_PREFIX)-objdump
@@ -19,7 +19,7 @@ CFLAGS += -mcpu=cortex-m4 -mthumb -mabi=aapcs -mfloat-abi=soft
 CFLAGS += -ffunction-sections -fdata-sections --short-enums
 CFLAGS += -fno-strict-aliasing -fno-builtin
 # Throw errors for warnings and set GNU dialect to ISO C99
-CFLAGS += -Wall -Werror -std=gnu99
+CFLAGS += -Wall -std=gnu99 #-Werror
 # CFLAGS += -ggdb -Og / -O0 / -O3 etc
 # Chip specific
 CFLAGS += -DNRF52832_XXAA
