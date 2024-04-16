@@ -18,7 +18,7 @@ int main() {
 
     uint32_t MODE_MASK = (1 << 0);
     uint32_t PSEL_MASK = (13 << 8);
-    uint32_t POLARITY_MASK = (3 << 16);
+    uint32_t POLARITY_MASK = (1 << 16);
     uint32_t OUTINIT_MASK = 0;
     GPIOTE->CONFIG[0] = MODE_MASK | PSEL_MASK | POLARITY_MASK | OUTINIT_MASK;
 
