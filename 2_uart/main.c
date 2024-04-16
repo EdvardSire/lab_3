@@ -2,6 +2,7 @@
 #include "uart.h"
 #include <stdint.h>
 #include <stdio.h>
+#include <types.h>
 
 #define BUTTON_1 13
 #define BUTTON_2 14
